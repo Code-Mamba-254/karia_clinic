@@ -4,33 +4,27 @@ import '../models/patient.dart';
 
 class PatientSummaryCard extends StatelessWidget {
   final Patient patient;
+  final VoidCallback? onEdit;
 
-  const PatientSummaryCard({
-    super.key,
-    required this.patient,
-  });
+  const PatientSummaryCard({super.key, required this.patient, this.onEdit});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Row(
               children: [
-
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.blue.shade100,
                   child: Text(
-                    patient.name[0].toUpperCase(),
+                    patient.name.isEmpty ? '?' : patient.name[0].toUpperCase(),
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -42,10 +36,8 @@ class PatientSummaryCard extends StatelessWidget {
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       Text(
                         patient.name,
                         style: const TextStyle(
@@ -58,13 +50,17 @@ class PatientSummaryCard extends StatelessWidget {
 
                       Text(
                         patient.clinicNumber,
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                        ),
+                        style: TextStyle(color: Colors.grey.shade700),
                       ),
                     ],
                   ),
                 ),
+                if (onEdit != null)
+                  IconButton(
+                    tooltip: 'Edit patient biodata',
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
               ],
             ),
 
@@ -72,13 +68,12 @@ class PatientSummaryCard extends StatelessWidget {
 
             Row(
               children: [
-
                 const Icon(Icons.person_outline),
 
                 const SizedBox(width: 8),
 
                 Text(
-                  "${patient.sex.name == 'male' ? 'Male' : 'Female'} • ${patient.ageInYears} Years",
+                  "${patient.sex.name == 'male' ? 'Male' : 'Female'} • ${patient.ageLabel()}",
                 ),
               ],
             ),
@@ -87,27 +82,19 @@ class PatientSummaryCard extends StatelessWidget {
 
             Row(
               children: [
-
                 const Icon(Icons.home_outlined),
 
                 const SizedBox(width: 8),
 
-                Expanded(
-                  child: Text(
-                    patient.residence,
-                  ),
-                ),
+                Expanded(child: Text(patient.residence)),
               ],
             ),
 
-            if (patient.idNumber != null &&
-                patient.idNumber!.isNotEmpty)
+            if (patient.idNumber != null && patient.idNumber!.isNotEmpty)
               Padding(
-                padding:
-                    const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.only(top: 10),
                 child: Row(
                   children: [
-
                     const Icon(Icons.badge_outlined),
 
                     const SizedBox(width: 8),
@@ -117,14 +104,11 @@ class PatientSummaryCard extends StatelessWidget {
                 ),
               ),
 
-            if (patient.phoneNumber != null &&
-                patient.phoneNumber!.isNotEmpty)
+            if (patient.phoneNumber != null && patient.phoneNumber!.isNotEmpty)
               Padding(
-                padding:
-                    const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.only(top: 10),
                 child: Row(
                   children: [
-
                     const Icon(Icons.phone_outlined),
 
                     const SizedBox(width: 8),

@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function consultationIdentityUnchanged() {
+      return request.resource.data.patientId == resource.data.patientId
+        && request.resource.data.doctorId == resource.data.doctorId
+        && request.resource.data.doctorEmail == resource.data.doctorEmail
+        && request.resource.data.doctorName == resource.data.doctorName
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /patients/{patientId} {
+      allow read, create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    match /consultations/{consultationId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.doctorId == request.auth.uid
+        && request.resource.data.doctorEmail == request.auth.token.email
+        && exists(/databases/$(database)/documents/patients/$(request.resource.data.patientId));
+      allow update: if signedIn() && consultationIdentityUnchanged();
+      allow delete: if signedIn()
+        && resource.data.doctorId == request.auth.uid;
+    }
+
+    match /counters/{counterId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.value is int
+        && request.resource.data.value > 0;
+      allow update: if signedIn()
+        && request.resource.data.value is int
+        && request.resource.data.value == resource.data.value + 1;
+      allow delete: if false;
+    }
+
+    match /doctors/{doctorId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

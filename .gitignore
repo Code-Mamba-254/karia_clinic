@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Node tooling (Firestore rules/migration tests)
+firebase/node_modules/
+firebase-debug.log

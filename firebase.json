@@ -1,1 +1,35 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"clinic-app-b2569","appId":"1:727243261368:android:f881fc8b61ded5550d7b4d","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"clinic-app-b2569","configurations":{"android":"1:727243261368:android:f881fc8b61ded5550d7b4d","web":"1:727243261368:web:25bdd96f905d1bf20d7b4d"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "clinic-app-b2569",
+          "appId": "1:727243261368:android:f881fc8b61ded5550d7b4d",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "clinic-app-b2569",
+          "configurations": {
+            "android": "1:727243261368:android:f881fc8b61ded5550d7b4d",
+            "ios": "1:727243261368:ios:c50bb655a7983d1b0d7b4d",
+            "web": "1:727243261368:web:25bdd96f905d1bf20d7b4d"
+          }
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "clinic-app-b2569",
+          "appId": "1:727243261368:ios:c50bb655a7983d1b0d7b4d",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      }
+    }
+  }
+}

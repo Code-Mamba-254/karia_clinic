@@ -1,0 +1,21 @@
+{
+  "name": "karia-clinic-firebase-tools",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:rules": "node --test test/firestore.rules.test.mjs",
+    "test:migration": "node --test test/patient_search_index.test.mjs test/backfill_patient_search_prefixes.test.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "14.4.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "firebase": "12.19.0",
+    "firebase-tools": "15.30.1"
+  }
+}

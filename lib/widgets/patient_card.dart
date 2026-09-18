@@ -7,11 +7,7 @@ class PatientCard extends StatelessWidget {
   final Patient patient;
   final VoidCallback onTap;
 
-  const PatientCard({
-    super.key,
-    required this.patient,
-    required this.onTap,
-  });
+  const PatientCard({super.key, required this.patient, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -21,14 +17,12 @@ class PatientCard extends StatelessWidget {
         child: ListTile(
           leading: CircleAvatar(
             child: Text(
-              patient.name.isNotEmpty
-                  ? patient.name[0].toUpperCase()
-                  : "?",
+              patient.name.isNotEmpty ? patient.name[0].toUpperCase() : "?",
             ),
           ),
           title: Text(patient.name),
           subtitle: Text(
-            "${patient.sex == Sex.male ? "Male" : "Female"} • ${patient.ageInYears} years",
+            "${patient.sex == Sex.male ? "Male" : "Female"} • ${patient.ageLabel()}",
           ),
           trailing: const Icon(Icons.arrow_forward_ios),
         ),

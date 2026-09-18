@@ -3,58 +3,47 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/doctor.dart';
 
 class DoctorService {
-  final FirebaseFirestore _firestore =
-      FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
 
-  /// Get all active doctors
-Future<List<Doctor>> getDoctors() async {
-  final snapshot = await FirebaseFirestore.instance
-      .collection('doctors')
-      .get();
+  DoctorService({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
-  print("Doctors found: ${snapshot.docs.length}");
-
-  for (final doc in snapshot.docs) {
-    print("Document ID: ${doc.id}");
-    print(doc.data());
+  Future<List<Doctor>> getDoctors() async {
+    final snapshot = await _firestore.collection('doctors').get();
+    return snapshot.docs
+        .map((doc) => Doctor.fromFirestore(doc.id, doc.data()))
+        .toList(growable: false);
   }
 
-  return snapshot.docs
-      .map((doc) => Doctor.fromFirestore(
-            doc.id,
-            doc.data(),
-          ))
-      .toList();
-}
-
-  /// Get doctor's email using document id
   Future<String?> getDoctorEmail(String doctorId) async {
-    final doc = await _firestore
-        .collection('doctors')
-        .doc(doctorId)
-        .get();
-
-    if (!doc.exists) {
-      return null;
-    }
-
-    return doc.data()?['email'];
+    final doctor = await getDoctor(doctorId);
+    return doctor?.email;
   }
 
-  /// Get one doctor
   Future<Doctor?> getDoctor(String doctorId) async {
-    final doc = await _firestore
+    final doc = await _firestore.collection('doctors').doc(doctorId).get();
+    if (!doc.exists) return null;
+    return Doctor.fromFirestore(doc.id, doc.data()!);
+  }
+
+  Future<Doctor?> findDoctorForAuthUser({
+    required String uid,
+    required String? email,
+  }) async {
+    final doctorById = await getDoctor(uid);
+    if (doctorById != null) return doctorById;
+
+    final normalizedEmail = email?.trim();
+    if (normalizedEmail == null || normalizedEmail.isEmpty) return null;
+
+    final snapshot = await _firestore
         .collection('doctors')
-        .doc(doctorId)
+        .where('email', isEqualTo: normalizedEmail)
+        .limit(1)
         .get();
+    if (snapshot.docs.isEmpty) return null;
 
-    if (!doc.exists) {
-      return null;
-    }
-
-    return Doctor.fromFirestore(
-      doc.id,
-      doc.data()!,
-    );
+    final document = snapshot.docs.first;
+    return Doctor.fromFirestore(document.id, document.data());
   }
 }

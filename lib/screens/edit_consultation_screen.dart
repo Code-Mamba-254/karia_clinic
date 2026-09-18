@@ -5,21 +5,22 @@ import '../services/consultation_service.dart';
 
 class EditConsultationScreen extends StatefulWidget {
   final Consultation consultation;
+  final Future<void> Function(Consultation consultation)? updateConsultation;
 
   const EditConsultationScreen({
     super.key,
     required this.consultation,
+    this.updateConsultation,
   });
 
   @override
-  State<EditConsultationScreen> createState() =>
-      _EditConsultationScreenState();
+  State<EditConsultationScreen> createState() => _EditConsultationScreenState();
 }
 
-class _EditConsultationScreenState
-    extends State<EditConsultationScreen> {
-  final ConsultationService _consultationService =
-      ConsultationService();
+class _EditConsultationScreenState extends State<EditConsultationScreen> {
+  final ConsultationService _consultationService = ConsultationService();
+
+  bool isSaving = false;
 
   late TextEditingController chiefComplaintController;
 
@@ -43,44 +44,31 @@ class _EditConsultationScreenState
 
     final c = widget.consultation;
 
-    chiefComplaintController =
-        TextEditingController(text: c.chiefComplaint);
+    chiefComplaintController = TextEditingController(text: c.chiefComplaint);
 
-    temperatureController =
-        TextEditingController(text: c.temperature);
+    temperatureController = TextEditingController(text: c.temperature);
 
-    pulseController =
-        TextEditingController(text: c.pulseRate);
+    pulseController = TextEditingController(text: c.pulseRate);
 
-    respiratoryController =
-        TextEditingController(text: c.respiratoryRate);
+    respiratoryController = TextEditingController(text: c.respiratoryRate);
 
-    bpController =
-        TextEditingController(text: c.bloodPressure);
+    bpController = TextEditingController(text: c.bloodPressure);
 
-    oxygenController =
-        TextEditingController(text: c.oxygenSaturation);
+    oxygenController = TextEditingController(text: c.oxygenSaturation);
 
-    weightController =
-        TextEditingController(text: c.weight);
+    weightController = TextEditingController(text: c.weight);
 
-    heightController =
-        TextEditingController(text: c.height);
+    heightController = TextEditingController(text: c.height);
 
-    investigationsController =
-        TextEditingController(text: c.investigations);
+    investigationsController = TextEditingController(text: c.investigations);
 
-    diagnosisController =
-        TextEditingController(text: c.diagnosis);
+    diagnosisController = TextEditingController(text: c.diagnosis);
 
-    treatmentController =
-        TextEditingController(text: c.treatment);
+    treatmentController = TextEditingController(text: c.treatment);
 
-    labController =
-        TextEditingController(text: c.labFeedback);
+    labController = TextEditingController(text: c.labFeedback);
 
-    remarksController =
-        TextEditingController(text: c.remarks);
+    remarksController = TextEditingController(text: c.remarks);
   }
 
   @override
@@ -104,72 +92,70 @@ class _EditConsultationScreenState
     super.dispose();
   }
 
-  Future<void> updateConsultation() async {
+  Future<void> _handleUpdate() async {
+    if (isSaving) return;
+
     final updated = Consultation(
       id: widget.consultation.id,
       patientId: widget.consultation.patientId,
       doctorId: widget.consultation.doctorId,
       doctorEmail: widget.consultation.doctorEmail,
+      doctorName: widget.consultation.doctorName,
 
-      chiefComplaint:
-          chiefComplaintController.text.trim(),
+      chiefComplaint: chiefComplaintController.text.trim(),
 
-      temperature:
-          temperatureController.text.trim(),
+      temperature: temperatureController.text.trim(),
 
-      pulseRate:
-          pulseController.text.trim(),
+      pulseRate: pulseController.text.trim(),
 
-      respiratoryRate:
-          respiratoryController.text.trim(),
+      respiratoryRate: respiratoryController.text.trim(),
 
-      bloodPressure:
-          bpController.text.trim(),
+      bloodPressure: bpController.text.trim(),
 
-      oxygenSaturation:
-          oxygenController.text.trim(),
+      oxygenSaturation: oxygenController.text.trim(),
 
-      weight:
-          weightController.text.trim(),
+      weight: weightController.text.trim(),
 
-      height:
-          heightController.text.trim(),
+      height: heightController.text.trim(),
 
       bmi: widget.consultation.bmi,
 
-      investigations:
-          investigationsController.text.trim(),
+      investigations: investigationsController.text.trim(),
 
-      diagnosis:
-          diagnosisController.text.trim(),
+      diagnosis: diagnosisController.text.trim(),
 
-      treatment:
-          treatmentController.text.trim(),
+      treatment: treatmentController.text.trim(),
 
-      labFeedback:
-          labController.text.trim(),
+      labFeedback: labController.text.trim(),
 
-      remarks:
-          remarksController.text.trim(),
+      remarks: remarksController.text.trim(),
 
       createdAt: widget.consultation.createdAt,
     );
 
-    await _consultationService.updateConsultation(
-      updated,
-    );
+    setState(() => isSaving = true);
+    try {
+      await (widget.updateConsultation?.call(updated) ??
+          _consultationService.updateConsultation(updated));
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          "Consultation Updated",
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Consultation Updated")));
+
+      Navigator.pop(context);
+    } catch (error, stackTrace) {
+      debugPrint('Consultation update failed: $error\n$stackTrace');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Unable to update consultation. Please try again."),
         ),
-      ),
-    );
-
-    Navigator.pop(context);
+      );
+    } finally {
+      if (mounted) setState(() => isSaving = false);
+    }
   }
 
   Widget buildField(
@@ -193,83 +179,36 @@ class _EditConsultationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Edit Consultation"),
-      ),
+      appBar: AppBar(title: const Text("Edit Consultation")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            buildField(
-              "Chief Complaint",
-              chiefComplaintController,
-              lines: 2,
-            ),
+            buildField("Chief Complaint", chiefComplaintController, lines: 2),
 
-            buildField(
-              "Temperature",
-              temperatureController,
-            ),
+            buildField("Temperature", temperatureController),
 
-            buildField(
-              "Pulse Rate",
-              pulseController,
-            ),
+            buildField("Pulse Rate", pulseController),
 
-            buildField(
-              "Respiratory Rate",
-              respiratoryController,
-            ),
+            buildField("Respiratory Rate", respiratoryController),
 
-            buildField(
-              "Blood Pressure",
-              bpController,
-            ),
+            buildField("Blood Pressure", bpController),
 
-            buildField(
-              "Oxygen Saturation",
-              oxygenController,
-            ),
+            buildField("Oxygen Saturation", oxygenController),
 
-            buildField(
-              "Weight",
-              weightController,
-            ),
+            buildField("Weight", weightController),
 
-            buildField(
-              "Height",
-              heightController,
-            ),
+            buildField("Height", heightController),
 
-            buildField(
-              "Investigations",
-              investigationsController,
-              lines: 3,
-            ),
+            buildField("Investigations", investigationsController, lines: 3),
 
-            buildField(
-              "Diagnosis",
-              diagnosisController,
-              lines: 3,
-            ),
+            buildField("Diagnosis", diagnosisController, lines: 3),
 
-            buildField(
-              "Treatment",
-              treatmentController,
-              lines: 3,
-            ),
+            buildField("Treatment", treatmentController, lines: 3),
 
-            buildField(
-              "Lab Feedback",
-              labController,
-              lines: 3,
-            ),
+            buildField("Lab Feedback", labController, lines: 3),
 
-            buildField(
-              "Remarks",
-              remarksController,
-              lines: 3,
-            ),
+            buildField("Remarks", remarksController, lines: 3),
 
             const SizedBox(height: 20),
 
@@ -278,10 +217,8 @@ class _EditConsultationScreenState
               height: 55,
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.save),
-                label: const Text(
-                  "Update Consultation",
-                ),
-                onPressed: updateConsultation,
+                label: Text(isSaving ? "Updating..." : "Update Consultation"),
+                onPressed: isSaving ? null : _handleUpdate,
               ),
             ),
           ],

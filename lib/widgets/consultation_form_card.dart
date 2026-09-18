@@ -23,6 +23,7 @@ class ConsultationFormCard extends StatelessWidget {
   final TextEditingController remarksController;
 
   final VoidCallback onSave;
+  final bool isSaving;
 
   const ConsultationFormCard({
     super.key,
@@ -43,15 +44,14 @@ class ConsultationFormCard extends StatelessWidget {
     required this.remarksController,
 
     required this.onSave,
+    this.isSaving = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -60,13 +60,9 @@ class ConsultationFormCard extends StatelessWidget {
             /// ==========================
             /// CHIEF COMPLAINT
             /// ==========================
-
             const Text(
               "Chief Complaint",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
 
             const SizedBox(height: 12),
@@ -82,13 +78,9 @@ class ConsultationFormCard extends StatelessWidget {
             /// ==========================
             /// VITAL SIGNS
             /// ==========================
-
             const Text(
               "Vital Signs",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
 
             const SizedBox(height: 12),
@@ -153,23 +145,16 @@ class ConsultationFormCard extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            CustomTextField(
-              controller: heightController,
-              label: "Height (cm)",
-            ),
+            CustomTextField(controller: heightController, label: "Height (cm)"),
 
             const SizedBox(height: 24),
 
             /// ==========================
             /// CLINICAL NOTES
             /// ==========================
-
             const Text(
               "Clinical Notes",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
 
             const SizedBox(height: 12),
@@ -218,6 +203,7 @@ class ConsultationFormCard extends StatelessWidget {
               width: double.infinity,
               child: PrimaryButton(
                 text: "Save Consultation",
+                loading: isSaving,
                 onPressed: onSave,
               ),
             ),

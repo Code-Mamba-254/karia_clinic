@@ -1,0 +1,7 @@
+[
+  {"name":"  Raymond   Kip Yegon  ","normalized":"raymond kip yegon","matches":["r","RAY","kip","Kip Y","YEGo","yegon"],"misses":["mond","ip","ray y"]},
+  {"name":"Mary O'Neil","normalized":"mary o'neil","matches":["mary","O'N","o'neil"],"misses":["neil"]},
+  {"name":"Élodie Njeri","normalized":"élodie njeri","matches":["ÉLO","njer"],"misses":["lodie"]},
+  {"name":"   ","normalized":"","matches":[],"misses":["a"]},
+  {"name":"Jane 😀 Doe","normalized":"jane 😀 doe","matches":["jane","😀","doe","jane 😀"],"misses":["ane","oe"]}
+]
