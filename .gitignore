@@ -47,3 +47,7 @@ app.*.map.json
 # Node tooling (Firestore rules/migration tests)
 firebase/node_modules/
 firebase-debug.log
+
+# Service-account keys (never commit)
+clinic-app.json*
+*-firebase-adminsdk-*.json

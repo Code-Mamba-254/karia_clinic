@@ -5,8 +5,14 @@ import '../models/patient.dart';
 class PatientSummaryCard extends StatelessWidget {
   final Patient patient;
   final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const PatientSummaryCard({super.key, required this.patient, this.onEdit});
+  const PatientSummaryCard({
+    super.key,
+    required this.patient,
+    this.onEdit,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +66,15 @@ class PatientSummaryCard extends StatelessWidget {
                     tooltip: 'Edit patient biodata',
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit_outlined),
+                  ),
+                if (onDelete != null)
+                  IconButton(
+                    tooltip: 'Delete patient',
+                    onPressed: onDelete,
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: Colors.red.shade700,
+                    ),
                   ),
               ],
             ),

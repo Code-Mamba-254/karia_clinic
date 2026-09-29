@@ -6,6 +6,7 @@ import '../models/consultation.dart';
 
 import '../services/consultation_service.dart';
 import '../services/doctor_service.dart';
+import '../services/patient_service.dart';
 
 import '../widgets/patient_summary_card.dart';
 import '../widgets/consultation_form_card.dart';
@@ -21,12 +22,14 @@ class ConsultationScreen extends StatefulWidget {
   final PatientEditor? editPatient;
   final Stream<List<Consultation>> Function(String patientId)?
   consultationStream;
+  final Future<void> Function(String patientId)? deletePatient;
 
   const ConsultationScreen({
     super.key,
     required this.patient,
     this.editPatient,
     this.consultationStream,
+    this.deletePatient,
   });
 
   @override
@@ -51,6 +54,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   final remarksController = TextEditingController();
 
   final ConsultationService _consultationService = ConsultationService();
+  final PatientService _patientService = PatientService();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final DoctorService _doctorService = DoctorService();
@@ -58,6 +62,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   late Patient _patient;
   late Stream<List<Consultation>> _consultations;
   bool _isSaving = false;
+  bool _isDeleting = false;
 
   @override
   void initState() {
@@ -200,6 +205,56 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     setState(() => _patient = updatedPatient);
   }
 
+  Future<void> _confirmAndDeletePatient() async {
+    if (_isDeleting) return;
+
+    final patient = _patient;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete patient?'),
+        content: Text(
+          'This will permanently delete ${patient.name} '
+          '(${patient.clinicNumber}) and all of their consultation records. '
+          'This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    setState(() => _isDeleting = true);
+    try {
+      await (widget.deletePatient?.call(patient.id) ??
+          _patientService.deletePatient(patient.id));
+      if (!mounted) return;
+      navigator.pop();
+      messenger.showSnackBar(const SnackBar(content: Text('Patient deleted')));
+    } catch (error, stackTrace) {
+      debugPrint('Patient delete failed: $error\n$stackTrace');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Unable to delete patient. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final patient = _patient;
@@ -213,7 +268,11 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
 
           children: [
-            PatientSummaryCard(patient: patient, onEdit: _editPatient),
+            PatientSummaryCard(
+              patient: patient,
+              onEdit: _editPatient,
+              onDelete: _confirmAndDeletePatient,
+            ),
 
             const SizedBox(height: 24),
 

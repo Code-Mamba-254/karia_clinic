@@ -130,6 +130,9 @@ class _PatientLookupScreenState extends State<PatientLookupScreen> {
                             }
 
                             if (snapshot.hasError) {
+                              debugPrint(
+                                'Patient search failed: ${snapshot.error}',
+                              );
                               return const Center(
                                 child: Text(
                                   "Unable to search patients. Please try again.",

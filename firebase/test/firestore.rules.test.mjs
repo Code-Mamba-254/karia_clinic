@@ -5,7 +5,14 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  writeBatch,
+} from 'firebase/firestore';
 
 const projectId = 'demo-karia-clinic-rules';
 let environment;
@@ -24,6 +31,14 @@ before(async () => {
 
 afterEach(async () => environment.clearFirestore());
 after(async () => environment.cleanup());
+
+async function seedPatient() {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'patients/patient-1'), {
+      name: 'Jane Doe',
+    });
+  });
+}
 
 async function seedConsultation() {
   await environment.withSecurityRulesDisabled(async (context) => {
@@ -68,6 +83,23 @@ describe('clinical record access', () => {
         patientId: 'patient-1',
         doctorId: 'doctor-a',
         doctorEmail: 'doctor-a@example.com',
+        doctorName: 'Doctor A',
+        diagnosis: 'New',
+        createdAt: new Date('2026-09-16T10:00:00Z'),
+      }),
+    );
+  });
+
+  test('accepts a doctorEmail that differs from the token email only by case', async () => {
+    await seedPatient();
+    const db = environment
+      .authenticatedContext('doctor-a', { email: 'doctor-a@example.com' })
+      .firestore();
+    await assertSucceeds(
+      setDoc(doc(db, 'consultations/consultation-case'), {
+        patientId: 'patient-1',
+        doctorId: 'doctor-a',
+        doctorEmail: 'Doctor-A@Example.com',
         doctorName: 'Doctor A',
         diagnosis: 'New',
         createdAt: new Date('2026-09-16T10:00:00Z'),
@@ -132,13 +164,39 @@ describe('clinical record access', () => {
     );
   });
 
-  test('allows only the original doctor to delete a consultation', async () => {
+  test('allows only the original doctor to delete a consultation on its own', async () => {
+    await seedPatient();
     await seedConsultation();
     const doctorB = environment.authenticatedContext('doctor-b').firestore();
     await assertFails(deleteDoc(doc(doctorB, 'consultations/consultation-1')));
 
     const doctorA = environment.authenticatedContext('doctor-a').firestore();
     await assertSucceeds(deleteDoc(doc(doctorA, 'consultations/consultation-1')));
+  });
+
+  test('lets any signed-in doctor delete a patient with all consultations in one batch', async () => {
+    await seedPatient();
+    await seedConsultation();
+    const doctorB = environment.authenticatedContext('doctor-b').firestore();
+    const batch = writeBatch(doctorB);
+    batch.delete(doc(doctorB, 'consultations/consultation-1'));
+    batch.delete(doc(doctorB, 'patients/patient-1'));
+    await assertSucceeds(batch.commit());
+  });
+
+  test('rejects deleting another doctor consultation while the patient is kept', async () => {
+    await seedPatient();
+    await seedConsultation();
+    const doctorB = environment.authenticatedContext('doctor-b').firestore();
+    const batch = writeBatch(doctorB);
+    batch.delete(doc(doctorB, 'consultations/consultation-1'));
+    await assertFails(batch.commit());
+  });
+
+  test('denies unauthenticated patient deletion', async () => {
+    await seedPatient();
+    const db = environment.unauthenticatedContext().firestore();
+    await assertFails(deleteDoc(doc(db, 'patients/patient-1')));
   });
 
   test('allows public doctor directory reads but denies client writes', async () => {

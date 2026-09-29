@@ -6,27 +6,29 @@ service cloud.firestore {
     }
 
     function consultationIdentityUnchanged() {
-      return request.resource.data.patientId == resource.data.patientId
-        && request.resource.data.doctorId == resource.data.doctorId
-        && request.resource.data.doctorEmail == resource.data.doctorEmail
-        && request.resource.data.doctorName == resource.data.doctorName
-        && request.resource.data.createdAt == resource.data.createdAt;
+      return request.resource.data.get('patientId', null) == resource.data.get('patientId', null)
+        && request.resource.data.get('doctorId', null) == resource.data.get('doctorId', null)
+        && request.resource.data.get('doctorEmail', null) == resource.data.get('doctorEmail', null)
+        && request.resource.data.get('doctorName', null) == resource.data.get('doctorName', null)
+        && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null);
     }
 
     match /patients/{patientId} {
-      allow read, create, update: if signedIn();
-      allow delete: if false;
+      allow read, create, update, delete: if signedIn();
     }
 
     match /consultations/{consultationId} {
       allow read: if signedIn();
       allow create: if signedIn()
         && request.resource.data.doctorId == request.auth.uid
-        && request.resource.data.doctorEmail == request.auth.token.email
+        && request.resource.data.doctorEmail.lower() == request.auth.token.email.lower()
         && exists(/databases/$(database)/documents/patients/$(request.resource.data.patientId));
       allow update: if signedIn() && consultationIdentityUnchanged();
       allow delete: if signedIn()
-        && resource.data.doctorId == request.auth.uid;
+        && (
+          resource.data.get('doctorId', null) == request.auth.uid
+          || !existsAfter(/databases/$(database)/documents/patients/$(resource.data.get('patientId', '_')))
+        );
     }
 
     match /counters/{counterId} {

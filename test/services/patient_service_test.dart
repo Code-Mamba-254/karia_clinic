@@ -64,6 +64,85 @@ void main() {
       );
     });
   });
+
+  group('PatientService.deletePatient', () {
+    Future<void> addConsultation(
+      FakeFirebaseFirestore firestore,
+      String patientId,
+      String doctorId,
+    ) {
+      return firestore.collection('consultations').add({
+        'patientId': patientId,
+        'doctorId': doctorId,
+        'diagnosis': 'x',
+      });
+    }
+
+    test('deletes the patient and every consultation for that patient', () async {
+      final firestore = FakeFirebaseFirestore();
+      final service = PatientService(firestore: firestore);
+      final target = await service.savePatient(_patient(name: 'Jane Doe'));
+      final other = await service.savePatient(_patient(name: 'John Roe'));
+      await addConsultation(firestore, target.id, 'doctor-a');
+      await addConsultation(firestore, target.id, 'doctor-b');
+      await addConsultation(firestore, other.id, 'doctor-a');
+
+      final deleted = await service.deletePatient(target.id);
+
+      expect(deleted, 2);
+      expect(
+        (await firestore.collection('patients').doc(target.id).get()).exists,
+        isFalse,
+      );
+      final remaining = await firestore.collection('consultations').get();
+      expect(remaining.docs.map((doc) => doc.data()['patientId']), [other.id]);
+      expect(
+        (await firestore.collection('patients').doc(other.id).get()).exists,
+        isTrue,
+      );
+    });
+
+    test('deletes a patient that has no consultations', () async {
+      final firestore = FakeFirebaseFirestore();
+      final service = PatientService(firestore: firestore);
+      final target = await service.savePatient(_patient(name: 'Jane Doe'));
+
+      expect(await service.deletePatient(target.id), 0);
+      expect(
+        (await firestore.collection('patients').doc(target.id).get()).exists,
+        isFalse,
+      );
+    });
+
+    test('rejects a blank patient id without touching data', () async {
+      final firestore = FakeFirebaseFirestore();
+      final service = PatientService(firestore: firestore);
+      await service.savePatient(_patient(name: 'Jane Doe'));
+
+      await expectLater(service.deletePatient('  '), throwsArgumentError);
+      expect((await firestore.collection('patients').get()).docs, hasLength(1));
+    });
+
+    test('refuses and deletes nothing when one batch cannot hold it', () async {
+      final firestore = FakeFirebaseFirestore();
+      final service = PatientService(firestore: firestore);
+      final target = await service.savePatient(_patient(name: 'Jane Doe'));
+      for (var i = 0; i < PatientService.maxConsultationsPerDelete + 1; i++) {
+        await addConsultation(firestore, target.id, 'doctor-a');
+      }
+
+      await expectLater(service.deletePatient(target.id), throwsStateError);
+
+      expect(
+        (await firestore.collection('patients').doc(target.id).get()).exists,
+        isTrue,
+      );
+      expect(
+        (await firestore.collection('consultations').get()).docs,
+        hasLength(PatientService.maxConsultationsPerDelete + 1),
+      );
+    });
+  });
 }
 
 Patient _patient({required String name}) {

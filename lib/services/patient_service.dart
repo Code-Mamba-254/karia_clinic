@@ -5,6 +5,7 @@ import '../utils/patient_search_index.dart';
 
 class PatientService {
   static const _searchResultLimit = 50;
+  static const maxConsultationsPerDelete = 499;
 
   final FirebaseFirestore _db;
 
@@ -35,6 +36,32 @@ class PatientService {
             snapshot.docs.map(Patient.fromFirestore),
           ),
         );
+  }
+
+  /// Deletes the patient and all of their consultations in one atomic batch
+  /// (the patient document is included in the batch, which Firestore caps at
+  /// 500 writes). Returns the number of consultations deleted.
+  Future<int> deletePatient(String patientId) async {
+    if (patientId.trim().isEmpty) {
+      throw ArgumentError.value(patientId, 'patientId', 'ID is required.');
+    }
+
+    final consultations = await _db
+        .collection('consultations')
+        .where('patientId', isEqualTo: patientId)
+        .limit(maxConsultationsPerDelete + 1)
+        .get();
+    if (consultations.size > maxConsultationsPerDelete) {
+      throw StateError('Patient has too many consultations to delete at once.');
+    }
+
+    final batch = _db.batch();
+    for (final consultation in consultations.docs) {
+      batch.delete(consultation.reference);
+    }
+    batch.delete(patients.doc(patientId));
+    await batch.commit();
+    return consultations.size;
   }
 
   Future<void> updatePatient(Patient patient) async {
